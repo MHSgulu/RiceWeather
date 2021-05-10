@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="purple_200">#FFBB86FC</color>
+    <color name="purple_500">#FF6200EE</color>
+    <color name="purple_700">#FF3700B3</color>
+    <color name="teal_200">#FF03DAC5</color>
+    <color name="teal_700">#FF018786</color>
+
+
+    <!-- 天气背景颜色 -->
+    <color name="weather_qing">#4A8BDB</color> <!-- 晴 -->
+    <color name="weather_duoyun">#6A89C0</color> <!-- 多云 -->
+    <color name="weather_yin">#8DA1BA</color> <!-- 阴 -->
+    <color name="weather_rain">#67788C</color> <!-- 雨-->
+    <color name="weather_fuchen">#9E8A71</color> <!-- 浮尘 -->
+
+    <!--蓝色原色-->
+    <color name="blue_50">#FFE3F2FD</color>
+    <color name="blue_100">#FFBBDEFB</color>
+    <color name="blue_200">#FF90CAF9</color>
+    <color name="blue_300">#FF64B5F6</color>
+    <color name="blue_400">#FF42A5F5</color>
+    <color name="blue_500">#FF2196F3</color>
+    <color name="blue_600">#FF1E88E5</color>
+    <color name="blue_700">#FF1976D2</color>
+    <color name="blue_800">#FF1565C0</color>
+    <color name="blue_900">#FF0D47A1</color>
+    <!--蓝色强调色-->
+    <color name="blueAccent_100">#FF82B1FF</color>
+    <color name="blueAccent_200">#FF448AFF</color>
+    <color name="blueAccent_400">#FF2979FF</color>
+    <color name="blueAccent_700">#FF2962FF</color>
+
+    <!--灰色原色-->
+    <color name="grey_50">#FFFAFAFA</color>
+    <color name="grey_100">#FFF5F5F5</color>
+    <color name="grey_200">#FFEEEEEE</color>
+    <color name="grey_300">#FFE0E0E0</color>
+    <color name="grey_350">#FFD6D6D6</color> <!--仅适用于在浅色主题中按下时的凸起按钮-->
+    <color name="grey_400">#FFBDBDBD</color>
+    <color name="grey_500">#FF9E9E9E</color>
+    <color name="grey_600">#FF757575</color>
+    <color name="grey_700">#FF616161</color>
+    <color name="grey_800">#FF424242</color>
+    <color name="grey_850">#FF303030</color> <!--仅适用于深色主题中的背景色-->
+    <color name="grey_900">#FF212121</color>
+
+    <!--黑色-->
+    <color name="black">#000000</color>
+    <color name="black87">#DD000000</color>
+    <color name="black70">#B3000000</color>
+    <color name="black54">#8A000000</color>
+    <color name="black45">#73000000</color>
+    <color name="black38">#61000000</color>
+    <color name="black26">#42000000</color>
+    <color name="black12">#1F000000</color>
+
+    <!--白色-->
+    <color name="white">#FFFFFF</color>
+    <color name="white90">#E6FFFFFF</color>
+    <color name="white80">#CCFFFFFF</color>
+    <color name="white70">#B3FFFFFF</color>
+    <color name="white60">#99FFFFFF</color>
+    <color name="white54">#8AFFFFFF</color>
+    <color name="white38">#62FFFFFF</color>
+    <color name="white30">#4DFFFFFF</color>
+    <color name="white24">#3DFFFFFF</color>
+    <color name="white20">#33FFFFFF</color>
+    <color name="white15">#26FFFFFF</color>
+    <color name="white12">#1FFFFFFF</color>
+    <color name="white10">#1AFFFFFF</color>
+
+
+</resources>

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.design.riceweather">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.RiceWeather">
+        <activity android:name=".activity.CityWeatherDetailsActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity android:name=".MainActivity" />
+
+        <activity
+            android:name=".activity.CityManagementActivity"
+            android:description="@string/activity_description_city_management"
+            android:theme="@style/Theme.Common" />
+        <activity
+            android:name=".activity.SearchCityActivity"
+            android:description="@string/activity_description_city_search"
+            android:theme="@style/Theme.Common" />
+        <activity android:name=".activity.SevenDayWeatherActivity"
+            android:description="@string/activity_description_seven_day_weather"
+            android:theme="@style/Theme.Common"/>
+
+
+    </application>
+
+</manifest>
