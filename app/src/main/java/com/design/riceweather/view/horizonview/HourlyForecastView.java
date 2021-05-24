@@ -230,7 +230,7 @@ public class HourlyForecastView extends View implements ScrollWatcher {
         baseLinePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         baseLinePaint.setStrokeWidth(3);
         baseLinePaint.setStyle(Paint.Style.STROKE);
-        baseLinePaint.setColor(mContext.getResources().getColor(R.color./*slategray*/white38));
+        baseLinePaint.setColor(mContext.getResources().getColor(R.color./*slategray*/white10));
 
 
         bitmapPaint = new Paint(Paint.ANTI_ALIAS_FLAG);

@@ -148,6 +148,14 @@ public class CityWeatherDetailsActivity extends AppCompatActivity {
             Intent intent = new Intent(context, CityManagementActivity.class);
             startActivity(intent);
         });
+
+        viewBinding.ivMore.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+            }
+        });
+
     }
 
     private void initRequest() {
