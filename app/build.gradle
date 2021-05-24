@@ -17,6 +17,13 @@ android {
         versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        javaCompileOptions {
+            annotationProcessorOptions {
+                arguments = ["room.schemaLocation": "$projectDir/schemas".toString()]
+            }
+        }
+
     }
 
     buildTypes {
@@ -53,5 +60,7 @@ dependencies {
 
     //搭载Gson
     implementation 'com.squareup.retrofit2:converter-gson:2.6.2'
+
+    implementation files('libs/HeWeather_sdk.jar')
 
 }

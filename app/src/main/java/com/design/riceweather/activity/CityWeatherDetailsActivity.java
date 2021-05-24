@@ -1,7 +1,9 @@
 package com.design.riceweather.activity;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -14,20 +16,32 @@ import com.design.riceweather.adapter.RealTimeWeatherAdapter;
 import com.design.riceweather.adapter.WeatherDetailsAdapter;
 import com.design.riceweather.adapter.WeatherTipsAdapter;
 import com.design.riceweather.databinding.ActivityCityWeatherDetailsBinding;
-import com.design.riceweather.databse.AppDatabase;
 import com.design.riceweather.databse.SingletonRoomDatabase;
-import com.design.riceweather.entity.City;
 import com.design.riceweather.entity.CityWeather;
 import com.design.riceweather.entity.IPLocationEntity;
 import com.design.riceweather.util.Constant;
+import com.design.riceweather.util.ContentUtil;
 import com.design.riceweather.util.OkHttpUtils;
+import com.design.riceweather.util.SpUtils;
+import com.design.riceweather.view.horizonview.ScrollWatched;
+import com.design.riceweather.view.horizonview.ScrollWatcher;
 import com.google.gson.Gson;
 
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
+import interfaces.heweather.com.interfacesmodule.bean.base.Code;
+import interfaces.heweather.com.interfacesmodule.bean.base.Lang;
+import interfaces.heweather.com.interfacesmodule.bean.base.Mode;
+import interfaces.heweather.com.interfacesmodule.bean.base.Range;
+import interfaces.heweather.com.interfacesmodule.bean.base.Unit;
+import interfaces.heweather.com.interfacesmodule.bean.geo.GeoBean;
+import interfaces.heweather.com.interfacesmodule.bean.weather.WeatherHourlyBean;
+import interfaces.heweather.com.interfacesmodule.view.HeWeather;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.Response;
@@ -41,7 +55,9 @@ public class CityWeatherDetailsActivity extends AppCompatActivity {
     private CityWeather data;
     private IPLocationEntity ipLocationEntity;
 
-    private AppDatabase db;
+    private WeatherHourlyBean weatherHourlyBean;
+    private ScrollWatched watched;
+    List<ScrollWatcher> watcherList = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,49 +66,24 @@ public class CityWeatherDetailsActivity extends AppCompatActivity {
         viewBinding = ActivityCityWeatherDetailsBinding.inflate(getLayoutInflater());
         View view = viewBinding.getRoot();
         setContentView(view);
-
         context = viewBinding.getRoot().getContext();
-        db = SingletonRoomDatabase.getInstance(getApplicationContext()).getDb();
         initUIView();
+        initObserver();
+        initView();
         initOnClickListener();
-
-        String cityName = getIntent().getStringExtra(Constant.ARG_CityName);
-        //Log.d(TAG, "点位：cityName: " + cityName);
-        if (cityName == null){
-            getLocation();
-        }else{
-            requestWeatherData(getIntent().getStringExtra(Constant.ARG_CityName));
-        }
+        initRequest();
     }
 
-    private void getLocation() {
-        Callback callback = new Callback() {
+    private void initView() {
+        viewBinding.hsv.setToday24HourView(viewBinding.hourly); //加载 动态实时天气
+        watched.addWatcher(viewBinding.hourly);
+        //横向滚动监听
+        viewBinding.hsv.setOnScrollChangeListener(new View.OnScrollChangeListener() {
             @Override
-            public void onFailure(@NotNull Call call, @NotNull IOException e) {
-                e.printStackTrace();
-                Log.e(TAG, "onFailure: " + e);
+            public void onScrollChange(View v, int scrollX, int scrollY, int oldScrollX, int oldScrollY) {
+                watched.notifyWatcher(scrollX);
             }
-
-            @Override
-            public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
-                if (!response.isSuccessful()) {
-                    Toast.makeText(context, "响应错误: " + response, Toast.LENGTH_SHORT).show();
-                    throw new IOException("异常: " + response);
-                }
-                ipLocationEntity = new Gson().fromJson(response.body().string(),IPLocationEntity.class);
-                Log.d(TAG, "点位： 当前IP地址所在城市: " + ipLocationEntity.getLocation().getCity());
-                requestWeatherData(ipLocationEntity.getLocation().getCity());
-                //如果数据库没有数据，添加当前地址进去，不可删除
-                if (db.cityDao().getAll().size() > 0){
-                    Log.d(TAG, "点位： 当前数据库中存在城市数据");
-                }else{
-                    Log.d(TAG, "点位： 当前数据库中不存在城市数据，添加一条所在IP定位城市数据");
-                    db.cityDao().insert(new City(ipLocationEntity.getLocation().getCity()));
-                }
-            }
-        };
-        OkHttpUtils.getInstance().requestIpLocation(callback);
-
+        });
     }
 
     private void initUIView() {
@@ -127,11 +118,79 @@ public class CityWeatherDetailsActivity extends AppCompatActivity {
         //getWindow().setNavigationBarColor(getColor(R.color.weather_qing)); //设置底部系统导航栏状态栏背景颜色
     }
 
+    /**
+     * 初始化横向滚动条的监听
+     */
+    private void initObserver() {
+        Log.d("点位", "initObserver");
+        watched = new ScrollWatched() {
+            @Override
+            public void addWatcher(ScrollWatcher watcher) {
+                watcherList.add(watcher);
+            }
+
+            @Override
+            public void removeWatcher(ScrollWatcher watcher) {
+                watcherList.remove(watcher);
+            }
+
+            @Override
+            public void notifyWatcher(int x) {
+                for (ScrollWatcher watcher : watcherList) {
+                    watcher.update(x);
+                }
+            }
+        };
+    }
+
     private void initOnClickListener() {
         viewBinding.ivAdd.setOnClickListener(v -> {
             Intent intent = new Intent(context, CityManagementActivity.class);
             startActivity(intent);
         });
+    }
+
+    private void initRequest() {
+        String cityName = getIntent().getStringExtra(Constant.ARG_CityName);
+        //Log.d(TAG, "点位：cityName: " + cityName);
+        if (cityName == null){
+            getLocation();
+        }else{
+            requestWeatherData(getIntent().getStringExtra(Constant.ARG_CityName));
+            getNowCity(cityName);
+        }
+    }
+
+    private void getLocation() {
+        Callback callback = new Callback() {
+            @Override
+            public void onFailure(@NotNull Call call, @NotNull IOException e) {
+                e.printStackTrace();
+                Log.e(TAG, "onFailure: " + e);
+            }
+
+            @Override
+            public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
+                if (!response.isSuccessful()) {
+                    Toast.makeText(context, "响应错误: " + response, Toast.LENGTH_SHORT).show();
+                    throw new IOException("异常: " + response);
+                }
+                ipLocationEntity = new Gson().fromJson(response.body().string(),IPLocationEntity.class);
+                Log.d(TAG, "点位： 当前IP地址所在城市: " + ipLocationEntity.getLocation().getCity());
+                String cityName = ipLocationEntity.getLocation().getCity();
+                requestWeatherData(cityName);
+                getNowCity(cityName);
+                //如果数据库没有数据，添加当前地址进去，不可删除
+                if (SingletonRoomDatabase.getInstance(getApplicationContext()).getAllCity().size() > 0){
+                    Log.d(TAG, "点位： 当前数据库中存在城市数据");
+                }else{
+                    Log.d(TAG, "点位： 当前数据库中不存在城市数据，添加一条所在IP定位城市数据");
+                    SingletonRoomDatabase.getInstance(getApplicationContext()).insertCity(ipLocationEntity.getLocation().getCity());
+                }
+            }
+        };
+        OkHttpUtils.getInstance().requestIpLocation(callback);
+
     }
 
     private void requestWeatherData(String cityName) {
@@ -233,12 +292,108 @@ public class CityWeatherDetailsActivity extends AppCompatActivity {
         });
     }
 
+    private void getNowCity(String cityName) {
+        Log.d(TAG, "点位：getNowCity");
+        HeWeather.getGeoCityLookup(context, cityName, new HeWeather.OnResultGeoListener() {
+            @Override
+            public void onError(Throwable throwable) {
+                Log.d(TAG, "点位：getNowCity onError");
+            }
 
-    /*@Override
-    public void finish() {
-        super.finish();
-        if (db != null){
-            db.close();
+            @Override
+            public void onSuccess(GeoBean search) {
+                Log.d(TAG, "点位：getNowCity onSuccess");
+                Log.d(TAG, "点位：search.getLocationBean().size():  " + search.getLocationBean().size());
+                GeoBean.LocationBean basic = search.getLocationBean().get(0);
+                String cid = basic.getId();
+                Log.d(TAG, "点位：cid:  " + cid);
+                requestWeatherHourly(cid);
+            }
+        });
+    }
+
+    private void requestWeatherHourly(String cityID) {
+        Log.d(TAG, "点位： 请求获取数据实时数据");
+        //第二个参数是城市ID
+        HeWeather.getWeather24Hourly(context, cityID, new HeWeather.OnResultWeatherHourlyListener() {
+            @Override
+            public void onError(Throwable throwable) {
+                Log.e("sky", "getWeatherHourly onError: getWeatherHourly");
+            }
+
+            @Override
+            public void onSuccess(WeatherHourlyBean weatherHourlyBean) {
+                if (Code.OK.getCode().equalsIgnoreCase(weatherHourlyBean.getCode())) {
+                    Log.d("点位", "getWeatherHourly onSuccess：获取实时天气数据成功");
+                    //SpUtils.saveBean(context, "weatherHourly", weatherHourlyBean);
+                    getWeatherHourly(weatherHourlyBean);
+                }else{
+                    Log.d("点位", "获取数据失败");
+                    Log.d("点位", "weatherHourlyBean.getCode()：" + weatherHourlyBean.getCode());
+                }
+            }
+        });
+    }
+
+
+    @SuppressLint("DefaultLocale")
+    public void getWeatherHourly(WeatherHourlyBean bean) {
+        if (bean != null && bean.getHourly() != null) {
+            Log.d("点位", "getWeatherHourly 进一步获取数据");
+            weatherHourlyBean = bean;
+            List<WeatherHourlyBean.HourlyBean> hourlyWeatherList = bean.getHourly();
+            List<WeatherHourlyBean.HourlyBean> data = new ArrayList<>();
+            if (hourlyWeatherList.size() > 23) {
+                Log.d("点位", "数据长度大于23");
+                for (int i = 0; i < 24; i++) {
+                    data.add(hourlyWeatherList.get(i));
+                    String condCode = data.get(i).getIcon();
+                    String time = data.get(i).getFxTime();
+                    time = time.substring(time.length() - 11, time.length() - 9);
+                    int hourNow = Integer.parseInt(time);
+                    if (hourNow >= 6 && hourNow <= 19) {
+                        data.get(i).setIcon(condCode + "d");
+                    } else {
+                        data.get(i).setIcon(condCode + "n");
+                    }
+                }
+            }
+            else {
+                Log.d("点位", "数据长度小于23");
+                for (int i = 0; i < hourlyWeatherList.size(); i++) {
+                    data.add(hourlyWeatherList.get(i));
+                    String condCode = data.get(i).getIcon();
+                    String time = data.get(i).getFxTime();
+                    time = time.substring(time.length() - 11, time.length() - 9);
+                    int hourNow = Integer.parseInt(time);
+                    if (hourNow >= 6 && hourNow <= 19) {
+                        data.get(i).setIcon(condCode + "d");
+                    } else {
+                        data.get(i).setIcon(condCode + "n");
+                    }
+                }
+            }
+
+            int minTmp = Integer.parseInt(data.get(0).getTemp());
+            int maxTmp = minTmp;
+            for (int i = 0; i < data.size(); i++) {
+                Log.d("点位", "正在找出最高温度和最低温度...");
+                int tmp = Integer.parseInt(data.get(i).getTemp());
+                minTmp = Math.min(tmp, minTmp);
+                maxTmp = Math.max(tmp, maxTmp);
+            }
+            //设置当天的最高最低温度
+            viewBinding.hourly.setHighestTemp(maxTmp);
+            viewBinding.hourly.setLowestTemp(minTmp);
+            if (maxTmp == minTmp) {
+                Log.d("点位", "最高温和最低温相等");
+                viewBinding.hourly.setLowestTemp(minTmp - 1);
+            }
+            viewBinding.hourly.initData(data);
+            viewBinding.tvLineMaxTmp.setText(String.format("%d°", maxTmp));
+            viewBinding.tvLineMinTmp.setText(String.format("%d°", minTmp));
         }
-    }*/
+    }
+
+
 }

@@ -40,7 +40,6 @@ public class SevenDayWeatherActivity extends AppCompatActivity {
 
     private CityWeather data;
     private String cityName;
-    private AppDatabase db;
     private List<City> dataList = new ArrayList<>();
 
     @Override
@@ -58,17 +57,16 @@ public class SevenDayWeatherActivity extends AppCompatActivity {
             cityName = getIntent().getStringExtra(Constant.ARG_CityName);
             viewBinding.tvCityName.setText(cityName);
             requestData(cityName);
-            db = SingletonRoomDatabase.getInstance(getApplicationContext()).getDb();
         }
 
         viewBinding.llBack.setOnClickListener(v -> finish());
         viewBinding.ivAddCity.setOnClickListener(v -> {
             //将当前城市添加到本地数据库中
-            db.cityDao().insert(new City(cityName));
+            SingletonRoomDatabase.getInstance(getApplicationContext()).insertCity(cityName);
             Toast.makeText(context, "添加成功", Toast.LENGTH_SHORT).show();
             checkIsInDB();
 
-            dataList = db.cityDao().getAll();
+            dataList = SingletonRoomDatabase.getInstance(getApplicationContext()).getAllCity();
             Log.d(TAG, "点位————数据库中的城市列表—————");
             int i = 0;
             for (City city: dataList){
@@ -86,7 +84,7 @@ public class SevenDayWeatherActivity extends AppCompatActivity {
     }
 
     private void checkIsInDB() {
-        City city = db.cityDao().queryCity(cityName);
+        City city = SingletonRoomDatabase.getInstance(getApplicationContext()).queryCity(cityName);
         if (city != null){
             Log.d(TAG, "点位：数据库中已存在该城市：" + city.cityName);
             viewBinding.ivAddCity.setVisibility(View.GONE);
@@ -136,11 +134,4 @@ public class SevenDayWeatherActivity extends AppCompatActivity {
         });
     }
 
-    /*@Override
-    public void finish() {
-        super.finish();
-        if (db != null){
-            db.close();
-        }
-    }*/
 }
