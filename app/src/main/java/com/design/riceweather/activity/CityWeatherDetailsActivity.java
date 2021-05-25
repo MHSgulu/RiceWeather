@@ -1,15 +1,21 @@
 package com.design.riceweather.activity;
 
 import android.annotation.SuppressLint;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.PopupMenu;
 
 import com.design.riceweather.R;
 import com.design.riceweather.adapter.RealTimeWeatherAdapter;
@@ -35,10 +41,6 @@ import java.util.List;
 import java.util.Objects;
 
 import interfaces.heweather.com.interfacesmodule.bean.base.Code;
-import interfaces.heweather.com.interfacesmodule.bean.base.Lang;
-import interfaces.heweather.com.interfacesmodule.bean.base.Mode;
-import interfaces.heweather.com.interfacesmodule.bean.base.Range;
-import interfaces.heweather.com.interfacesmodule.bean.base.Unit;
 import interfaces.heweather.com.interfacesmodule.bean.geo.GeoBean;
 import interfaces.heweather.com.interfacesmodule.bean.weather.WeatherHourlyBean;
 import interfaces.heweather.com.interfacesmodule.view.HeWeather;
@@ -46,18 +48,20 @@ import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.Response;
 
-public class CityWeatherDetailsActivity extends AppCompatActivity {
+public class CityWeatherDetailsActivity extends AppCompatActivity implements PopupMenu.OnMenuItemClickListener {
 
     private static final String TAG = "CityWeatherDetailsActiv";
     private ActivityCityWeatherDetailsBinding viewBinding;
     private Context context;
 
+    private String jsonData;
     private CityWeather data;
     private IPLocationEntity ipLocationEntity;
 
-    private WeatherHourlyBean weatherHourlyBean;
     private ScrollWatched watched;
     List<ScrollWatcher> watcherList = new ArrayList<>();
+
+    private MenuInflater menuInflater;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -149,12 +153,7 @@ public class CityWeatherDetailsActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
-        viewBinding.ivMore.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-            }
-        });
+        viewBinding.ivMore.setOnClickListener((View v) -> showPopup(viewBinding.ivMore));
 
     }
 
@@ -217,7 +216,8 @@ public class CityWeatherDetailsActivity extends AppCompatActivity {
                 }
                 //OkHttpAssist.PrintRequestHeader(response.headers());
                 //System.out.println(response.body().string()); //response.body().string() 只能调用一次
-                data = new Gson().fromJson(Objects.requireNonNull(response.body()).string(), CityWeather.class);
+                jsonData = Objects.requireNonNull(response.body()).string();
+                data = new Gson().fromJson(jsonData,CityWeather.class);
                 //System.out.println("111: " + data.getResult().getResult().getCity());
                 //当前回调已不在UI线程也就是Android主线程，需要手动切换
                 runOnUiThread();
@@ -348,7 +348,6 @@ public class CityWeatherDetailsActivity extends AppCompatActivity {
     public void getWeatherHourly(WeatherHourlyBean bean) {
         if (bean != null && bean.getHourly() != null) {
             Log.d("点位", "getWeatherHourly 进一步获取数据");
-            weatherHourlyBean = bean;
             List<WeatherHourlyBean.HourlyBean> hourlyWeatherList = bean.getHourly();
             List<WeatherHourlyBean.HourlyBean> data = new ArrayList<>();
             if (hourlyWeatherList.size() > 23) {
@@ -402,6 +401,70 @@ public class CityWeatherDetailsActivity extends AppCompatActivity {
             viewBinding.tvLineMinTmp.setText(String.format("%d°", minTmp));
         }
     }
+
+
+    public void showPopup(View v) {
+        /*
+          构造函数，用于使用锚视图创建新的弹出菜单。
+
+          @param context 运行弹出菜单的上下文，通过它可以访问当前主题，资源等.
+         * @param anchor 此弹出窗口的锚定视图。 如果有空间，则弹出窗口将显示在锚点的下方；如果没有空间，则弹出窗口将显示在其上方.
+         */
+        PopupMenu popup = new PopupMenu(context, v);
+        MenuInflater inflater = popup.getMenuInflater();
+        inflater.inflate(R.menu.overflow_menu, popup.getMenu());
+        popup.setOnMenuItemClickListener(this); //activity实现OnMenuItemClickListener
+        popup.show();
+    }
+
+    @SuppressLint("NonConstantResourceId")
+    @Override
+    public boolean onMenuItemClick(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.option_1:
+                ClipboardManager clipboard = (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
+                ClipData clip = ClipData.newPlainText("气象数据:" +item.getItemId(), jsonData);
+                if (clipboard != null) {
+                    clipboard.setPrimaryClip(clip);
+                }
+                Toast.makeText(context, "气象数据已复制到粘贴板", Toast.LENGTH_SHORT).show();
+                return true;
+            /*case R.id.option_2:
+                Toast.makeText(context, "option_1", Toast.LENGTH_SHORT).show();
+                return true;*/
+            default:
+                return false;
+        }
+    }
+
+
+
+
+    /**
+     * 初始化活动的标准选项菜单的内容.  您应该将菜单项放入<var>menu</var>.
+     *
+     * <p>第一次显示选项菜单时，仅调用一次.  每次显示菜单时都要更新, see{@link #onPrepareOptionsMenu}.
+     *
+     * <p>默认实现是使用标准系统菜单项填充菜单.  它们被放置在 {@link Menu#CATEGORY_SYSTEM}组中，以便可以与应用程序定义的菜单项一起正确排序.
+     * 派生类应始终调用基本实现.
+     *
+     * <p>您可以安全地按住 <var>menu</var> 以及从中创建的所有项目), 根据需要对其进行修改, 直到下次调用onCreateOptionsMenu()为止.
+     *
+     * <p>将项目添加到菜单时, 您可以实施活动的{@link #onOptionsItemSelected}方法在那里处理它们.
+     *
+     * @param menu 您放置项目的选项菜单.
+     *
+     * @return 您必须返回true才能显示菜单;如果返回false，则不会显示.
+     *
+     * @see #onPrepareOptionsMenu
+     * @see #onOptionsItemSelected
+     */
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        super.onCreateOptionsMenu(menu);
+        return true;
+    }
+
 
 
 }
