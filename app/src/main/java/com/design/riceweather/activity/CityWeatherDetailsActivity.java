@@ -197,7 +197,6 @@ public class CityWeatherDetailsActivity extends AppCompatActivity implements Pop
             }
         };
         OkHttpUtils.getInstance().requestIpLocation(callback);
-
     }
 
     private void requestWeatherData(String cityName) {
@@ -291,7 +290,6 @@ public class CityWeatherDetailsActivity extends AppCompatActivity implements Pop
                     //viewBinding.recycleTips.setLayoutManager(new GridLayoutManager(context, 3));
                     //adapter3 = new WeatherTipsAdapter(data.getResult().getResult().getIndex());
                     viewBinding.recycleTips.setAdapter(new WeatherTipsAdapter(data.getResult().getResult().getIndex()));
-
 
                 } else {
                     Toast.makeText(context, "msg: " + data.getResult().getMsg(), Toast.LENGTH_SHORT).show();
